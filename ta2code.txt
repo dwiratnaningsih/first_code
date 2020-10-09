@@ -1,0 +1,120 @@
+clc; clear; close all;
+srcFiles = dir('D:\Dataset\20 citra\*.jpg');  % the folder in which ur images exists
+
+for i = 1 : length(srcFiles)
+filename = strcat('D:\Dataset\20 citra\',srcFiles(i).name);
+x = imread(filename);
+
+%ekstraksi saluran warna
+R = x (:,:,1); %merah
+G = x (:,:,2); %hijau
+B = x (:,:,3); %biru
+
+%Mengubah ke grayscale
+J=rgb2gray(x);
+HB = figure, imhist (J);
+saveas (HB, strcat('D:\Dataset\Grayscale\',num2str(i),'.jpg'));
+imwrite(J, strcat('D:\Dataset\Grayscale\',num2str(i),'.jpg'));
+
+%penghilangan noise dengan median filter
+K1 = medfilt2(J); 
+imwrite(K1, strcat('D:\Dataset\Median\',num2str(i),'.jpg'));
+K1 = imresize (K1, [605 700]);
+
+%penghilangan noise dengan minimum filter
+K2 = filmin(J);
+imwrite(K2, strcat('D:\Dataset\Minimum\',num2str(i),'.jpg'));
+K2 = imresize (K2, [605 700]);
+
+%penghilangan noise dengan maksimim filter
+K3 = filmax(J);
+imwrite(K3, strcat('D:\Dataset\Maksimum\',num2str(i),'.jpg'));
+K3 = imresize (K3, [605 700]);
+
+%CLAHE + Median filter
+A1 = adapthisteq(K1,'clipLimit',0.01,'Distribution','rayleigh');     
+imwrite(A1, strcat('D:\Dataset\CLAHEMedian\',num2str(i),'.jpg'));
+
+%CLAHE + Minimum filter
+A2 = adapthisteq(K2,'clipLimit',0.01,'Distribution','rayleigh');     
+imwrite(A2, strcat('D:\Dataset\CLAHEMinimum\',num2str(i),'.jpg'));
+
+%CLAHE + Maksimum filter
+A3 = adapthisteq(K3,'clipLimit',0.01,'Distribution','rayleigh');     
+imwrite(A2, strcat('D:\Dataset\CLAHEMaksimum\',num2str(i),'.jpg'));
+
+%Contrast stetching using stretchlim + median  
+CS_med = imadjust(K1,stretchlim(K1),[0.01 0.99]);
+imwrite(CS_med, strcat('D:\Dataset\CSMedian\',num2str(i),'.jpg'));
+
+%Contrast stetching using stretchlim + minimum  
+CS_min = imadjust(K2,stretchlim(K1),[0.01 0.99]);
+imwrite(CS_min, strcat('D:\Dataset\CSMinimum\',num2str(i),'.jpg'));
+
+%Contrast stetching using stretchlim + median  
+CS_max = imadjust(K1,stretchlim(K1),[0.01 0.99]);
+imwrite(CS_max, strcat('D:\Dataset\CSMaksimum\',num2str(i),'.jpg'));
+
+
+n=size(J);
+M=n(1);
+N=n(1);
+
+%menghitung nilai MSE, PSNR. CLAHE + median filter
+MSE_CLAHE1 = sum(sum((J-A1).^2))/(M*N);
+PSNR_CLAHE1 = 10*log10(256*256/MSE_CLAHE1);
+ssimval_CLAHE1 = ssim (J,A1);
+
+%menampilkan nilai MSE, PSNR. CLAHE + median filter
+fprintf('\n hasil CLAHE dengan median filter : ');
+fprintf('\n %0.4f ', MSE_CLAHE1);
+fprintf('\n %0.4f ', PSNR_CLAHE1);
+fprintf('\n %0.4f \n',ssimval_CLAHE1);
+
+%menghitung nilai MSE, PSNR. CLAHE + minimum filter
+MSE_CLAHEmin = sum(sum((J-A2).^2))/(M*N);
+PSNR_CLAHEmin = 10*log10(256*256/MSE_CLAHEmin);
+ssimval_CLAHEmin = ssim (J,A2);
+
+%menampilkan nilai MSE, PSNR. CLAHE + minimum filter
+fprintf('\n hasil CLAHE dengan minimum filter : ');
+fprintf('\n %0.4f ', MSE_CLAHEmin);
+fprintf('\n %0.4f ', PSNR_CLAHEmin);
+fprintf('\n %0.4f \n',ssimval_CLAHEmin);
+
+
+%menghitung nilai MSE, PSNR. CLAHE + maksimum filter
+MSE_CLAHEmax = sum(sum((J-A3).^2))/(M*N);
+PSNR_CLAHEmax = 10*log10(256*256/MSE_CLAHEmax);
+ssimval_CLAHEmax = ssim (J,A3);
+
+%menampilkan nilai MSE, PSNR. CLAHE + maksimum filter
+fprintf('\n hasil CLAHE dengan maksimum filter : ');
+fprintf('\n %0.4f ', MSE_CLAHEmax);
+fprintf('\n %0.4f ', PSNR_CLAHEmax);
+fprintf('\n %0.4f \n',ssimval_CLAHEmax);
+
+%menghitung nilai MSE, PSNR. CS + median filter
+MSE_CSmed = sum(sum((J-CS_min).^2))/(M*N);
+PSNR_CSmed = 10*log10(256*256/MSE_CSmed);
+ssimval_med = ssim (J,CS_med);
+
+%menampilkan nilai MSE, PSNR. CS + median filter
+fprintf('\n hasil CS dengan median filter : ');
+fprintf('\n %0.4f ', MSE_CSmed);
+fprintf('\n %0.4f ', PSNR_CSmed);
+fprintf('\n %0.4f \n',ssimval_med);
+
+%menghitung nilai MSE, PSNR. CS + maksimum filter
+MSE_CSmax = sum(sum((J-CS_max).^2))/(M*N);
+PSNR_CSmax = 10*log10(256*256/MSE_CSmax);
+ssimval_max = ssim (J,CS_max);
+
+%menampilkan nilai MSE, PSNR. CS + maksimum filter
+fprintf('\n hasil CS dengan maksimum filter : ');
+fprintf('\n %0.4f ', MSE_CSmax);
+fprintf('\n %0.4f ', PSNR_CSmax);
+fprintf('\n %0.4f \n',ssimval_max);
+
+
+end
